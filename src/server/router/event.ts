@@ -11,6 +11,18 @@ export const eventRouter = createRouter()
       }
     }
   })
+  .query("getOne", {
+    input: z.object({
+      eventId: z.string()
+    }),
+    async resolve({ ctx, input }) {
+      try {
+        return await ctx.prisma.event.findFirst({ where: { id: input.eventId } })
+      } catch (error) {
+        console.log("error", error)
+      }
+    }
+  })
   .mutation("postEvent", {
     input: z.object({
       name: z.string(),

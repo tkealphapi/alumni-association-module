@@ -4,18 +4,19 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 
 const Events = () => {
-  const { data: events, isLoading } = trpc.useQuery(["event.getAll"])
+  const { data: eventsList, isLoading } = trpc.useQuery(["event.getAll"])
 
   if (isLoading) return <div>Fetching Events...</div>
 
   return (
     <div>
-      {events?.map((event, index: number) => {
+      {eventsList?.map((event, index: number) => {
         if(!event.private) {
           return (
             <div key={index}>
               <h2>{event.name}</h2>
               <p>{event.description}</p>
+              <code>{event.id}</code>
             </div>
           )
         }
@@ -24,11 +25,28 @@ const Events = () => {
   )
 }
 
+const singleEvent = (eventId: string) => {
+  const { data: event, isLoading } = trpc.useQuery(["event.getOne", {eventId}])
+
+  if (isLoading) return <div>Fetching Event...</div>
+
+  return (
+    <div>
+      <div>
+        <h2>{event?.name}</h2>
+        <p>{event?.description}</p>
+        <code>{event?.id}</code>
+      </div>
+    </div>
+  )
+}
+
 const Home: NextPage = () => {
 
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
-  const { data: session, status } = useSession();
+  const [eventId, setEventId] = useState("")
+  const { data: session } = useSession()
 
   const ctx = trpc.useContext()
   const postEvent = trpc.useMutation("event.postEvent", {
@@ -44,6 +62,8 @@ const Home: NextPage = () => {
       ctx.invalidateQueries(["event.getAll"])
     }
   })
+
+  const oneEvent = singleEvent(eventId)
 
   return (
     <div>
@@ -82,6 +102,12 @@ const Home: NextPage = () => {
           maxLength={128}
           onChange={(event) => setDescription(event.target.value)}
         />
+        <input 
+          type="text"
+          value={eventId}
+          placeholder="Event Id..."
+          onChange={(event) => setEventId(event.target.value)}
+        />
         <button type="submit">submit</button>
       </form>
       </div>
@@ -104,6 +130,7 @@ const Home: NextPage = () => {
             </button>
           </div>
         )}
+      { oneEvent }
       </div>
     </div>
   );
